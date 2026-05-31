@@ -1187,21 +1187,35 @@ async function connectCalendar() {
 async function loadCalendarEvents(days=7) {
   if (!gapiReady) await initGapiClient();
   const timeMin = new Date(); timeMin.setHours(0, 0, 0, 0); // từ 00:00 hôm nay để gồm cả event đã qua trong ngày
-  const timeMax = addDays(timeMin, days);
+  const timeMax = addDays(timeMin, days + 1); // +1 để không hụt event ở ngày biên do timezone/cutoff
 
-  // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không chỉ 'primary'
+  // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không phụ thuộc c.selected.
   let calIds = ['primary'], account = '';
   try {
-    const list = await gapi.client.calendar.calendarList.list({ minAccessRole: 'reader', maxResults: 50 });
-    const items = list.result.items || [];
-    const ids = items.filter(c => c.selected !== false).map(c => c.id);
+    const items = [];
+    let pageToken = null;
+    do {
+      const list = await gapi.client.calendar.calendarList.list({
+        minAccessRole: 'reader',
+        maxResults: 250,
+        pageToken: pageToken || undefined
+      });
+      items.push(...(list.result.items || []));
+      pageToken = list.result.nextPageToken || null;
+    } while (pageToken);
+
+    const ids = [...new Set(
+      items
+        .filter(c => c?.id && !c.deleted && c.accessRole && c.accessRole !== 'none')
+        .map(c => c.id)
+    )];
     if (ids.length) calIds = ids;
     account = (items.find(c => c.primary)?.id) || '';
   } catch (_) { /* không liệt kê được → fallback 'primary' */ }
 
   const params = {
     timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
-    singleEvents: true, orderBy: 'startTime', maxResults: 40
+    singleEvents: true, orderBy: 'startTime', maxResults: 250
   };
   const lists = await Promise.all(calIds.map(id =>
     gapi.client.calendar.events.list({ ...params, calendarId: id })
@@ -1210,7 +1224,7 @@ async function loadCalendarEvents(days=7) {
   ));
   const raw = lists.flat();
   calEvents = normalizeCalendarEvents(raw).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-  calDebug = `account: ${account || '?'} | calendars: ${calIds.length} | raw_events: ${raw.length}`;
+  calDebug = `account: ${account || '?'} | calendars: ${calIds.length} | raw_events: ${raw.length} | from:${timeMin.toISOString()} | to:${timeMax.toISOString()}`;
   return calEvents;
 }
 
