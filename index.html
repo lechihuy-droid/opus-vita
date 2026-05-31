@@ -1187,21 +1187,31 @@ async function connectCalendar() {
 async function loadCalendarEvents(days=7) {
   if (!gapiReady) await initGapiClient();
   const timeMin = new Date(); timeMin.setHours(0, 0, 0, 0); // từ 00:00 hôm nay để gồm cả event đã qua trong ngày
-  const timeMax = addDays(timeMin, days);
+  const timeMax = addDays(timeMin, days + 1);
 
   // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không chỉ 'primary'
   let calIds = ['primary'], account = '';
   try {
-    const list = await gapi.client.calendar.calendarList.list({ minAccessRole: 'reader', maxResults: 50 });
-    const items = list.result.items || [];
-    const ids = items.filter(c => c.selected !== false).map(c => c.id);
+    const all = [];
+    let pageToken = '';
+    do {
+      const list = await gapi.client.calendar.calendarList.list({
+        minAccessRole: 'reader',
+        maxResults: 250,
+        pageToken: pageToken || undefined
+      });
+      const items = list.result.items || [];
+      all.push(...items);
+      pageToken = list.result.nextPageToken || '';
+    } while (pageToken);
+    const ids = all.filter(c => c && c.deleted !== true && c.id).map(c => c.id);
     if (ids.length) calIds = ids;
-    account = (items.find(c => c.primary)?.id) || '';
+    account = (all.find(c => c.primary)?.id) || '';
   } catch (_) { /* không liệt kê được → fallback 'primary' */ }
 
   const params = {
     timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
-    singleEvents: true, orderBy: 'startTime', maxResults: 40
+    singleEvents: true, orderBy: 'startTime', maxResults: 250
   };
   const lists = await Promise.all(calIds.map(id =>
     gapi.client.calendar.events.list({ ...params, calendarId: id })
