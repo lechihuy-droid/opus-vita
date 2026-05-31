@@ -1,0 +1,51 @@
+{
+  "$schema": "https://www.designtokens.org/tr/drafts/format/",
+  "meta": {
+    "source": "ChatGPT review",
+    "status": "review handoff",
+    "product": "Opus Nexus",
+    "direction": "Premium personal assistant / personal command center; Roman inscriptions; sharp geometric; authoritative"
+  },
+  "opusNexus": {
+    "color": {
+      "canvas": { "$type": "color", "$value": "#0D0F14", "$description": "Main app canvas background" },
+      "surface": { "$type": "color", "$value": "#151922", "$description": "Primary dark surface/card" },
+      "surface2": { "$type": "color", "$value": "#10131A", "$description": "Secondary surface" },
+      "surface3": { "$type": "color", "$value": "#0B0E13", "$description": "Deep utility tile surface" },
+      "border": { "$type": "color", "$value": "rgba(212,175,55,0.16)", "$description": "Gold-tinted subtle border" },
+      "borderSoft": { "$type": "color", "$value": "rgba(255,255,255,0.07)", "$description": "Neutral subtle border" },
+      "text": { "$type": "color", "$value": "#F7F3EA", "$description": "Primary high-contrast text" },
+      "textSecondary": { "$type": "color", "$value": "#C4BFB4", "$description": "Secondary text" },
+      "textMuted": { "$type": "color", "$value": "#8C9096", "$description": "Muted labels / helper text" },
+      "gray": { "$type": "color", "$value": "#ADB4BE", "$description": "Inactive icon/text" },
+      "gold": { "$type": "color", "$value": "#D4AF37", "$description": "Brand / authority / active / goal / key / finance" },
+      "goldSoft": { "$type": "color", "$value": "#F1D98A", "$description": "Soft gold for selected text and highlights" },
+      "blue": { "$type": "color", "$value": "#4FA3FF", "$description": "Health / protein / water / feedback" },
+      "green": { "$type": "color", "$value": "#37C977", "$description": "Training / movement / fiber / sync / success" },
+      "purple": { "$type": "color", "$value": "#B67CFF", "$description": "Sleep / recovery / Vita support" },
+      "red": { "$type": "color", "$value": "#FF5B5B", "$description": "Critical alert / deficit" },
+      "orange": { "$type": "color", "$value": "#FF9E3D", "$description": "Energy / warning / attention" },
+      "vitaShield": { "$type": "color", "$value": "#EC4899", "$description": "Vita Guardian Shield outer stroke" },
+      "vitaPulse": { "$type": "color", "$value": "#FCD34D", "$description": "Vita Guardian Shield pulse stroke" }
+    },
+    "radius": {
+      "brandPanel": { "$type": "dimension", "$value": "6px", "$description": "Animus-aligned square-ish panels" },
+      "utilityTile": { "$type": "dimension", "$value": "10px", "$description": "Near-square Navigation & Utility tiles" },
+      "utilityIconBox": { "$type": "dimension", "$value": "8px", "$description": "Near-square utility icon box" },
+      "metricTile": { "$type": "dimension", "$value": "14px", "$description": "Metric/detail/status tile radius" }
+    },
+    "stroke": {
+      "icon": { "$type": "dimension", "$value": "2px", "$description": "Default icon stroke" },
+      "healthHeart": { "$type": "dimension", "$value": "2.2px", "$description": "Health heart stroke for small-size readability" }
+    },
+    "size": {
+      "iconNav": { "$type": "dimension", "$value": "22px", "$description": "Bottom navigation icon size" },
+      "iconDefault": { "$type": "dimension", "$value": "28px", "$description": "Default tile icon size" },
+      "iconPrimary": { "$type": "dimension", "$value": "38px", "$description": "Primary tab icon size" },
+      "touchMin": { "$type": "dimension", "$value": "44px", "$description": "Minimum mobile touch target" }
+    },
+    "usage": {
+      "goldVisualWeight": { "$type": "number", "$value": 0.15, "$description": "Gold should stay around 10-15 percent visual weight, not a full-app color wash" }
+    }
+  }
+}
