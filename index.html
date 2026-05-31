@@ -1217,12 +1217,18 @@ async function loadCalendarEvents(days=7) {
 
 async function loadTasks() {
   if (!gapiReady) await initGapiClient();
+  if (!gapi.client.tasks?.tasks?.list) {
+    tasksError = 'Google Tasks API chưa sẵn sàng.';
+    gTasks = [];
+    return gTasks;
+  }
   const res = await gapi.client.tasks.tasks.list({
     tasklist: '@default',
     showCompleted: false,
     showHidden: false,
     maxResults: 50
   });
+  tasksError = '';
   gTasks = (res.result.items || []).filter(t => t.status !== 'completed');
   return gTasks;
 }
@@ -1281,6 +1287,10 @@ function estimateFreeWindows(events) {
   return Math.max(0, 7 - Object.values(days).filter(h => h >= 6).length);
 }
 
+function shouldShowCalendarDebug() {
+  return !!calError || /(?:\?|&)debugCal=1(?:&|$)/.test(location.search);
+}
+
 function renderCalendarContext(compact=false) {
   if (!isGoogleConfigured()) {
     return `<div class="brief-card">
@@ -1316,7 +1326,7 @@ function renderCalendarContext(compact=false) {
         ${uiIcon('i-calendar-days')}
         <div>Lịch trống 7 ngày tới${s.allDay ? ` (${s.allDay} sự kiện cả ngày)` : ''}.</div>
         <div style="margin-top:4px">Chưa có gì để Nexus phân tích.</div>
-        ${calDebug ? `<div style="margin-top:8px;font-size:11px;color:var(--vita-faint);word-break:break-all">${esc(calDebug)}</div>` : ''}
+        ${(calDebug && shouldShowCalendarDebug()) ? `<div style="margin-top:8px;font-size:11px;color:var(--vita-faint);word-break:break-all">${esc(calDebug)}</div>` : ''}
         <button class="action-btn secondary-btn" onclick="goPlanWeek()" style="margin-top:12px;max-width:200px;margin-left:auto;margin-right:auto">Plan My Week →</button>
       </div>
     </div>`;
