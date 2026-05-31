@@ -1157,6 +1157,24 @@ function applyGoogleToken() {
   }
 }
 
+async function gFetchJson(url) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${gToken}`,
+      Accept: 'application/json'
+    }
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = body?.error?.message || '';
+    } catch (_) {}
+    throw new Error(`Calendar API ${res.status}${detail ? `: ${detail}` : ''}`);
+  }
+  return res.json();
+}
+
 async function ensureCalendarWriteAccess() {
   if (!gToken || gTokenScope !== CONFIG.google.writeScopes) {
     await requestGoogleToken(CONFIG.google.writeScopes, 'consent');
@@ -1186,6 +1204,7 @@ async function connectCalendar() {
 
 async function loadCalendarEvents(days=7) {
   if (!gapiReady) await initGapiClient();
+  if (!gToken) throw new Error('Chua co Google access token. Hay ket noi lai Calendar.');
   const timeMin = new Date(); timeMin.setHours(0, 0, 0, 0); // từ 00:00 hôm nay để gồm cả event đã qua trong ngày
   const timeMax = addDays(timeMin, days + 1);
 
@@ -1216,11 +1235,10 @@ async function loadCalendarEvents(days=7) {
   const lists = await Promise.all(calIds.map(id =>
     gapi.client.calendar.events.list({ ...params, calendarId: id })
       .then(r => r.result.items || [])
-      .catch(() => [])
   ));
   const raw = lists.flat();
   calEvents = normalizeCalendarEvents(raw).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-  calDebug = `account: ${account || '?'} · ${calIds.length} calendar · ${raw.length} event thô`;
+  calDebug = `account:${account || '?'} | calendars:${calIds.length} | raw:${raw.length} | from:${timeMin.toISOString()} | to:${timeMax.toISOString()}`;
   return calEvents;
 }
 
