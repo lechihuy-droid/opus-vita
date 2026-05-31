@@ -506,13 +506,33 @@ canvas { display: block; }
   text-transform:uppercase; letter-spacing:.4px;
   padding:6px 2px; background:var(--vita-bg);
 }
-.cal-day-list { border:1px solid var(--vita-line); border-radius:8px; background:rgba(255,255,255,.02); padding:0 10px; }
+.cal-day-list { position: relative; border:1px solid var(--vita-line); border-radius:8px; background:rgba(255,255,255,.02); padding:0 10px 0 22px; }
+.cal-day-list::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: rgba(255,255,255,.18);
+}
 .cal-row {
   display:grid; grid-template-columns: 86px minmax(0,1fr) auto; gap:10px; align-items:center;
   padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); position:relative;
 }
 .cal-row:last-child { border-bottom:none; }
-.cal-row::before { content:''; position:absolute; left:-10px; top:8px; bottom:8px; width:2px; border-radius:2px; background:rgba(255,255,255,.14); }
+.cal-row::before {
+  content:'';
+  position:absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--vita-info);
+  box-shadow: 0 0 0 2px #0B0F1A;
+}
 .cal-row.busy-low::before { background: var(--vita-good); }
 .cal-row.busy-mid::before { background: var(--vita-warn); }
 .cal-row.busy-high::before { background: var(--vita-bad); }
@@ -1563,8 +1583,8 @@ function dayLabel(dateStr) {
   const t = new Date(); t.setHours(0,0,0,0);
   const n = new Date(t); n.setDate(t.getDate() + 1);
   const x = new Date(d); x.setHours(0,0,0,0);
-  if (x.getTime() === t.getTime()) return 'Hom nay';
-  if (x.getTime() === n.getTime()) return 'Ngay mai';
+  if (x.getTime() === t.getTime()) return 'Hôm nay';
+  if (x.getTime() === n.getTime()) return 'Ngày mai';
   return d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
 }
 
