@@ -618,7 +618,7 @@ canvas { display: block; }
   </svg>
   <div class="topbar">
     <div class="tb-row1">
-      <h1><svg class="brand-mark" viewBox="0 0 64 64"><use href="#i-opus-mark"/></svg>Opus Nexus <span id="streak-badge"></span></h1>
+      <h1><svg class="brand-mark" viewBox="0 0 64 64"><use href="#i-opus-mark"/></svg>OPUS NEXUS <span id="streak-badge"></span></h1>
       <div style="display:flex;gap:6px">
         <button class="sync-btn" onclick="reload()"><svg class="ui-ico" viewBox="0 0 24 24"><use href="#i-sync"/></svg><span>Sync</span></button>
         <button class="pat-btn" onclick="resetPat()" aria-label="Đổi PAT" title="Đổi PAT"><svg class="ui-ico" viewBox="0 0 24 24"><use href="#i-key"/></svg></button>
@@ -1187,35 +1187,21 @@ async function connectCalendar() {
 async function loadCalendarEvents(days=7) {
   if (!gapiReady) await initGapiClient();
   const timeMin = new Date(); timeMin.setHours(0, 0, 0, 0); // từ 00:00 hôm nay để gồm cả event đã qua trong ngày
-  const timeMax = addDays(timeMin, days + 1); // +1 để không hụt event ở ngày biên do timezone/cutoff
+  const timeMax = addDays(timeMin, days);
 
-  // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không phụ thuộc c.selected.
+  // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không chỉ 'primary'
   let calIds = ['primary'], account = '';
   try {
-    const items = [];
-    let pageToken = null;
-    do {
-      const list = await gapi.client.calendar.calendarList.list({
-        minAccessRole: 'reader',
-        maxResults: 250,
-        pageToken: pageToken || undefined
-      });
-      items.push(...(list.result.items || []));
-      pageToken = list.result.nextPageToken || null;
-    } while (pageToken);
-
-    const ids = [...new Set(
-      items
-        .filter(c => c?.id && !c.deleted && c.accessRole && c.accessRole !== 'none')
-        .map(c => c.id)
-    )];
+    const list = await gapi.client.calendar.calendarList.list({ minAccessRole: 'reader', maxResults: 50 });
+    const items = list.result.items || [];
+    const ids = items.filter(c => c.selected !== false).map(c => c.id);
     if (ids.length) calIds = ids;
     account = (items.find(c => c.primary)?.id) || '';
   } catch (_) { /* không liệt kê được → fallback 'primary' */ }
 
   const params = {
     timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
-    singleEvents: true, orderBy: 'startTime', maxResults: 250
+    singleEvents: true, orderBy: 'startTime', maxResults: 40
   };
   const lists = await Promise.all(calIds.map(id =>
     gapi.client.calendar.events.list({ ...params, calendarId: id })
@@ -1224,7 +1210,7 @@ async function loadCalendarEvents(days=7) {
   ));
   const raw = lists.flat();
   calEvents = normalizeCalendarEvents(raw).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-  calDebug = `account: ${account || '?'} | calendars: ${calIds.length} | raw_events: ${raw.length} | from:${timeMin.toISOString()} | to:${timeMax.toISOString()}`;
+  calDebug = `account: ${account || '?'} · ${calIds.length} calendar · ${raw.length} event thô`;
   return calEvents;
 }
 
