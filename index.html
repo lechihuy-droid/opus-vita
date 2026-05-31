@@ -1113,7 +1113,7 @@ async function initGapiClient() {
   });
   await gapi.client.init({
     apiKey: CONFIG.google.apiKey,
-    discoveryDocs: [CONFIG.google.discoveryDoc, CONFIG.google.tasksDiscoveryDoc]
+    discoveryDocs: [CONFIG.google.discoveryDoc]
   });
   gapiReady = true;
   applyGoogleToken();
