@@ -1210,7 +1210,7 @@ async function loadCalendarEvents(days=7) {
   ));
   const raw = lists.flat();
   calEvents = normalizeCalendarEvents(raw).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-  calDebug = `account: ${account || '?'} · ${calIds.length} calendar · ${raw.length} event thô`;
+  calDebug = `account: ${account || '?'} | calendars: ${calIds.length} | raw_events: ${raw.length}`;
   return calEvents;
 }
 
