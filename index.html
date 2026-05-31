@@ -618,7 +618,7 @@ canvas { display: block; }
   </svg>
   <div class="topbar">
     <div class="tb-row1">
-      <h1><svg class="brand-mark" viewBox="0 0 64 64"><use href="#i-opus-mark"/></svg>OPUS NEXUS <span id="streak-badge"></span></h1>
+      <h1><svg class="brand-mark" viewBox="0 0 64 64"><use href="#i-opus-mark"/></svg>Opus Nexus <span id="streak-badge"></span></h1>
       <div style="display:flex;gap:6px">
         <button class="sync-btn" onclick="reload()"><svg class="ui-ico" viewBox="0 0 24 24"><use href="#i-sync"/></svg><span>Sync</span></button>
         <button class="pat-btn" onclick="resetPat()" aria-label="Đổi PAT" title="Đổi PAT"><svg class="ui-ico" viewBox="0 0 24 24"><use href="#i-key"/></svg></button>
@@ -1111,10 +1111,9 @@ async function initGapiClient() {
   await new Promise((resolve, reject) => {
     gapi.load('client', { callback: resolve, onerror: () => reject(new Error('Không tải được Google API client.')) });
   });
-  await gapi.client.init({
-    apiKey: CONFIG.google.apiKey,
-    discoveryDocs: [CONFIG.google.discoveryDoc]
-  });
+  // Load Calendar (required) + Tasks (optional — nếu Tasks API chưa bật thì chỉ mất Tasks, không mất Calendar)
+  await gapi.client.init({ apiKey: CONFIG.google.apiKey, discoveryDocs: [CONFIG.google.discoveryDoc] });
+  await gapi.client.load(CONFIG.google.tasksDiscoveryDoc).catch(() => null);
   gapiReady = true;
   applyGoogleToken();
   return true;
@@ -1157,24 +1156,6 @@ function applyGoogleToken() {
   }
 }
 
-async function gFetchJson(url) {
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${gToken}`,
-      Accept: 'application/json'
-    }
-  });
-  if (!res.ok) {
-    let detail = '';
-    try {
-      const body = await res.json();
-      detail = body?.error?.message || '';
-    } catch (_) {}
-    throw new Error(`Calendar API ${res.status}${detail ? `: ${detail}` : ''}`);
-  }
-  return res.json();
-}
-
 async function ensureCalendarWriteAccess() {
   if (!gToken || gTokenScope !== CONFIG.google.writeScopes) {
     await requestGoogleToken(CONFIG.google.writeScopes, 'consent');
@@ -1204,41 +1185,31 @@ async function connectCalendar() {
 
 async function loadCalendarEvents(days=7) {
   if (!gapiReady) await initGapiClient();
-  if (!gToken) throw new Error('Chua co Google access token. Hay ket noi lai Calendar.');
   const timeMin = new Date(); timeMin.setHours(0, 0, 0, 0); // từ 00:00 hôm nay để gồm cả event đã qua trong ngày
-  const timeMax = addDays(timeMin, days + 1);
+  const timeMax = addDays(timeMin, days);
 
   // Lấy tất cả calendar user có quyền đọc (primary + calendar phụ), không chỉ 'primary'
   let calIds = ['primary'], account = '';
   try {
-    const all = [];
-    let pageToken = '';
-    do {
-      const list = await gapi.client.calendar.calendarList.list({
-        minAccessRole: 'reader',
-        maxResults: 250,
-        pageToken: pageToken || undefined
-      });
-      const items = list.result.items || [];
-      all.push(...items);
-      pageToken = list.result.nextPageToken || '';
-    } while (pageToken);
-    const ids = all.filter(c => c && c.deleted !== true && c.id).map(c => c.id);
+    const list = await gapi.client.calendar.calendarList.list({ minAccessRole: 'reader', maxResults: 50 });
+    const items = list.result.items || [];
+    const ids = items.filter(c => c.selected !== false).map(c => c.id);
     if (ids.length) calIds = ids;
-    account = (all.find(c => c.primary)?.id) || '';
+    account = (items.find(c => c.primary)?.id) || '';
   } catch (_) { /* không liệt kê được → fallback 'primary' */ }
 
   const params = {
     timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
-    singleEvents: true, orderBy: 'startTime', maxResults: 250
+    singleEvents: true, orderBy: 'startTime', maxResults: 40
   };
   const lists = await Promise.all(calIds.map(id =>
     gapi.client.calendar.events.list({ ...params, calendarId: id })
       .then(r => r.result.items || [])
+      .catch(() => [])
   ));
   const raw = lists.flat();
   calEvents = normalizeCalendarEvents(raw).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-  calDebug = `account:${account || '?'} | calendars:${calIds.length} | raw:${raw.length} | from:${timeMin.toISOString()} | to:${timeMax.toISOString()}`;
+  calDebug = `account: ${account || '?'} · ${calIds.length} calendar · ${raw.length} event thô`;
   return calEvents;
 }
 
